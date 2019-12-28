@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:simple_todo/model/category.dart';
 import 'package:simple_todo/model/todo.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
@@ -22,67 +23,53 @@ class DBHelper {
 
   initDB() async {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
-    String path = join(documentsDirectory.path, 'superAwesomeDb.db');
+    String path = join(documentsDirectory.path, 'simpleTodo.db');
     return await openDatabase(
       path,
       version: 1,
-      onCreate: (Database db, int version) async {
-        await db.execute('''
-        CREATE TABLE $categoryTableName 
-          id INTEGER PRIMARY KEY, 
-          category TEXT, 
-          categoryName TEXT,
-          totalCnt INTEGER, 
-          completeCnt INTEGER
-        ''');
-        await db.execute('''
-        CREATE TABLE $todoTableName 
-          id INTEGER PRIMARY KEY, 
-          category INTEGER, 
-          todoName TEXT, 
-          todoMemo TEXT,
-          complete_cnt BIT
-        ''');
-      },
+      onCreate: _onCreate,
     );
   }
 
-  // CREATE
-  createData(Todo todo) async {
-    final db = await database;
-    var res = await db.insert(todoTableName, todo.toJson()); return res;
+  void _onCreate(Database db, int version) async {
+    await db.execute('''
+        CREATE TABLE $categoryTableName 
+        (
+          id INTEGER PRIMARY KEY AUTOINCREMENT, 
+          categoryName TEXT, 
+          categoryMemo TEXT,
+          totalCnt INTEGER, 
+          completeCnt INTEGER
+        )''');
+    await db.execute('''
+        CREATE TABLE $todoTableName
+        ( 
+          id INTEGER PRIMARY KEY AUTOINCREMENT, 
+          category INTEGER, 
+          todoName TEXT, 
+          todoMemo TEXT,
+          complete BIT
+        )''');
   }
 
-  // READ
- getTodo(int id) async {
+  // CREATE Category
+  createCategory(Category category) async {
     final db = await database;
-    var res = await db.query(todoTableName, where: 'id = ?', whereArgs: [id]);
-    return res.isNotEmpty ? Todo.fromJson(res.first) : Null;
+    var res = await db.insert(categoryTableName, category.toJson());
+    return res;
   }
 
-  // READ ALL DATA
- getAllTodos() async {
+  Future<List<Category>> getAllCategory() async {
     final db = await database;
-    var res = await db.query(todoTableName);
-    List<Todo> list = res.isNotEmpty ? res.map((c) => Todo.fromJson(c)).toList() : [];
+    var res = await db.query(categoryTableName);
+    List<Category> list = res.isNotEmpty ? res.map((c) => Category.fromJson(c)).toList() : [];
     return list;
   }
 
-  // Update Todo
-  updateTodo(Todo todo) async {
+  Future<List<Todo>> getCategoryItems(int categoryId) async {
     final db = await database;
-    var res = await db.update(todoTableName, todo.toJson(), where: 'id = ?', whereArgs: [todo.id]);
-    return res;
+    var res = await db.query(todoTableName, where: 'category = ?', whereArgs: [categoryId]);
+    List<Todo> list = res.isNotEmpty ? res.map((c) => Todo.fromJson(c)).toList() : [];
+    return list;
   }
-  // Delete Todo
-  deleteTodo(int id) async {
-    final db = await database;
-    db.delete(todoTableName, where: 'id = ?', whereArgs: [id]);
-  }
-  // Delete All
- deleteAllTodos() async {
-    final db = await database;
-    db.rawDelete('Delete * from $todoTableName');
-  }
-
 }

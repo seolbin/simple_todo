@@ -4,6 +4,10 @@ class Todo {
   String todoName;
   String todoMemo;
   bool complete;
+//  String createDt;
+//  String updateDt;
+//  String scheduleStart;
+//  String scheduleEnd;
 
   Todo({
     this.id,

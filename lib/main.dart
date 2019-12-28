@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
+import 'package:simple_todo/helper/db_helper.dart';
+import 'package:simple_todo/model/category.dart';
+import 'package:simple_todo/pageAddCategory.dart';
+import 'package:simple_todo/pageTodos.dart';
 
 void main() => runApp(MyApp());
 
@@ -20,6 +24,9 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
+//      home: MultiProvider(
+//          providers: [],
+//          child: TodoMain()),
       home: TodoMain(),
     );
 
@@ -33,34 +40,36 @@ class TodoMain extends StatefulWidget {
 }
 
 class _State extends State<TodoMain> {
-  int _count = 0;
-  String _lastSelected = 'TAB: 0';
-
-  void _selectedTab(int index) {
-    setState(() {
-      _lastSelected = 'TAB: $index';
-      print(_lastSelected);
-    });
-  }
-
-  void _selectedFab(int index) {
-    setState(() {
-      _lastSelected = 'FAB: $index';
-      print(_lastSelected);
-
-    });
-  }
-
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Simple TODO'),
         centerTitle: true,
       ),
-      body: Center(
-        child: Text('You have pressed the button $_count times.'),
+      body: FutureBuilder<List<Category>>(
+        future: DBHelper.db.getAllCategory(),
+        builder: (context, snapshot) {
+          return ListView(
+            children: snapshot.data
+                .map((category) =>
+                ListTile(
+                  title: Text('${category.categoryName} (${category.categoryMemo})'),
+                  subtitle: Text('${category.completeCnt} / ${category.totalCnt}'),
+                  trailing: Icon(Icons.keyboard_arrow_right),
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => TodoPage(category)));
+                  },
+                  onLongPress: (){
+                    // do something else
+                    print('long press! : ${category.id}');
+                  },
+                )
+            ).toList(),
+          );
+        },
       ),
       bottomNavigationBar: BottomAppBar(
         child: new Row(
@@ -82,8 +91,12 @@ class _State extends State<TodoMain> {
       floatingActionButton: FloatingActionButton.extended(
         elevation: 4.0,
         icon: const Icon(Icons.add),
-        label: const Text('Add a task'),
-        onPressed: () {},
+        label: Text('Add a category'),
+        onPressed: () {
+//          floatingText.change();
+          print('add click');
+          Navigator.push(context, MaterialPageRoute(builder: (context) => AddCategory()));
+        },
       ),
     );
   }
